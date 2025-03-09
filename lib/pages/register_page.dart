@@ -1,9 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:minimalsocialmedia/components/my_button.dart';
 import 'package:minimalsocialmedia/components/my_textfield.dart';
+
 import '../helper/helper_functions.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 class RegisterPage extends StatefulWidget {
   final void Function()? onTap;
@@ -26,10 +27,7 @@ class _RegisterPageState extends State<RegisterPage> {
     //show loading circle
     showDialog(
       context: context,
-      builder: (context) =>
-      const Center(
-          child: CircularProgressIndicator()
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     //make user passwords match
@@ -47,12 +45,15 @@ class _RegisterPageState extends State<RegisterPage> {
         //create the user
         UserCredential? userCredential = await FirebaseAuth.instance
             .createUserWithEmailAndPassword(
-          email: emailController.text,
-          password: passwordController.text,
-        );
+              email: emailController.text,
+              password: passwordController.text,
+            );
+
+        //create a user document and add to firestore
+        createUserDocument(userCredential);
 
         //pop loading circle
-        Navigator.pop(context);
+        if (context.mounted) Navigator.pop(context);
       } on FirebaseAuthException catch (e) {
         //pop loading circle
         Navigator.pop(context);
@@ -61,16 +62,25 @@ class _RegisterPageState extends State<RegisterPage> {
         displayMessageToUser(e.code, context);
       }
     }
+  }
 
+  //create a user document and collect them into firestore
+  Future<void> createUserDocument(UserCredential? userCredential) async {
+    if (userCredential != null && userCredential.user != null) {
+      await FirebaseFirestore.instance
+          .collection("Users")
+          .doc(userCredential.user!.email)
+          .set({
+            "email": userCredential.user!.email,
+            "username": usernameController.text,
+          });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme
-          .of(context)
-          .colorScheme
-          .surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(25.0),
@@ -81,10 +91,7 @@ class _RegisterPageState extends State<RegisterPage> {
               Icon(
                 Icons.person,
                 size: 80,
-                color: Theme
-                    .of(context)
-                    .colorScheme
-                    .inversePrimary,
+                color: Theme.of(context).colorScheme.inversePrimary,
               ),
 
               const SizedBox(height: 10),
@@ -133,10 +140,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   Text(
                     "Forgot Password?",
                     style: TextStyle(
-                      color: Theme
-                          .of(context)
-                          .colorScheme
-                          .secondary,
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
                   ),
                 ],
@@ -155,10 +159,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   Text(
                     "Already have an account ?",
                     style: TextStyle(
-                      color: Theme
-                          .of(context)
-                          .colorScheme
-                          .inversePrimary,
+                      color: Theme.of(context).colorScheme.inversePrimary,
                     ),
                   ),
                   GestureDetector(
