@@ -1,0 +1,1 @@
+ C:\\Users\\nurwa\\AndroidStudioProjects\\minimalsocialmedia\\.dart_tool\\flutter_build\\7848b9160c10e2a93d2ea6f87524bb39\\native_assets.json: 
