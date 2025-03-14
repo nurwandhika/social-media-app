@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:minimalsocialmedia/components/my_button.dart';
 import 'package:minimalsocialmedia/components/my_textfield.dart';
+import 'package:minimalsocialmedia/pages/login_page.dart';
 
 import '../helper/helper_functions.dart';
 
@@ -53,7 +54,15 @@ class _RegisterPageState extends State<RegisterPage> {
         createUserDocument(userCredential);
 
         //pop loading circle
-        if (context.mounted) Navigator.pop(context);
+        if (context.mounted) {
+          Navigator.pop(context); // Menutup dialog loading
+
+          //navigate to login page
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => LoginPage(onTap: widget.onTap)), // Mengarahkan pengguna ke halaman login
+          );
+        }
       } on FirebaseAuthException catch (e) {
         //pop loading circle
         Navigator.pop(context);
