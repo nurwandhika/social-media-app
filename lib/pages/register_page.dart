@@ -38,17 +38,21 @@ class _RegisterPageState extends State<RegisterPage> {
 
       //show error message to user
       displayMessageToUser("Passwords do not match", context);
-    }
-    //if password do match
-    else {
+    } else if (passwordController.text.length < 8) {
+      //pop loading circle
+      Navigator.pop(context);
+
+      //show error message to user
+      displayMessageToUser("Password must be at least 8 characters long.", context);
+    } else {
       //try creating the user
       try {
         //create the user
         UserCredential? userCredential = await FirebaseAuth.instance
             .createUserWithEmailAndPassword(
-              email: emailController.text,
-              password: passwordController.text,
-            );
+          email: emailController.text,
+          password: passwordController.text,
+        );
 
         //create a user document and add to firestore
         createUserDocument(userCredential);
@@ -71,6 +75,39 @@ class _RegisterPageState extends State<RegisterPage> {
         displayMessageToUser(e.code, context);
       }
     }
+  }
+
+  void displayMessageToUser(String code, BuildContext context) {
+    String message;
+    switch (code) {
+      case 'email-already-in-use':
+        message = 'The email address is already in use by another account.';
+        break;
+      case 'invalid-email':
+        message = 'The email address is not valid.';
+        break;
+      case 'operation-not-allowed':
+        message = 'Email/password accounts are not enabled.';
+        break;
+      case 'weak-password':
+        message = 'The password is too weak. It should be at least 8 characters long and include a combination of letters and numbers.';
+        break;
+      default:
+        message = 'An unknown error occurred.';
+    }
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Registration Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   //create a user document and collect them into firestore

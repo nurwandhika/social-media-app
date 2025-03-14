@@ -4,6 +4,8 @@ import 'package:minimalsocialmedia/components/my_button.dart';
 import 'package:minimalsocialmedia/components/my_textfield.dart';
 import 'package:minimalsocialmedia/helper/helper_functions.dart';
 
+import 'home_page.dart';
+
 class LoginPage extends StatefulWidget {
   final void Function()? onTap;
 
@@ -34,6 +36,10 @@ class _LoginPageState extends State<LoginPage> {
     //pop loading circle
       if (context.mounted) {
         Navigator.pop(context);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+        );
       }
     }
 
@@ -41,11 +47,44 @@ class _LoginPageState extends State<LoginPage> {
     on FirebaseAuthException catch (e){
       //pop loading circle
       Navigator.pop(context);
+      //display error message to user
       displayMessageToUser(e.code, context);
     }
 
   }
 
+  void displayMessageToUser(String code, BuildContext context) {
+    String message;
+    switch (code) {
+      case 'user-not-found':
+        message = 'No user found for that email.';
+        break;
+      case 'wrong-password':
+        message = 'Wrong password provided for that user.';
+        break;
+      case 'invalid-email':
+        message = 'The email address is not valid.';
+        break;
+      case 'user-disabled':
+        message = 'The user account has been disabled.';
+        break;
+      default:
+        message = 'An unknown error occurred.';
+    }
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Login Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
