@@ -5,12 +5,19 @@ import 'package:minimalsocialmedia/components/my_button.dart';
 import 'package:minimalsocialmedia/components/my_textfield.dart';
 import 'package:minimalsocialmedia/pages/login_page.dart';
 
-import '../helper/helper_functions.dart';
-
 class RegisterPage extends StatefulWidget {
   final void Function()? onTap;
+  final FirebaseAuth auth;
+  final FirebaseFirestore firestore;
 
-  const RegisterPage({super.key, required this.onTap});
+  RegisterPage({
+    Key? key,
+    required this.onTap,
+    FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
+  }) : this.auth = auth ?? FirebaseAuth.instance,
+       this.firestore = firestore ?? FirebaseFirestore.instance,
+       super(key: key);
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
@@ -43,16 +50,28 @@ class _RegisterPageState extends State<RegisterPage> {
       Navigator.pop(context);
 
       //show error message to user
-      displayMessageToUser("Password must be at least 8 characters long.", context);
+      displayMessageToUser(
+        "Password must be at least 8 characters long.",
+        context,
+      );
     } else {
       //try creating the user
       try {
-        //create the user
-        UserCredential? userCredential = await FirebaseAuth.instance
+        // In registerUser method, replace:
+        UserCredential? userCredential = await widget.auth
             .createUserWithEmailAndPassword(
-          email: emailController.text,
-          password: passwordController.text,
-        );
+              email: emailController.text,
+              password: passwordController.text,
+            );
+
+        // In createUserDocument method, replace:
+        await widget.firestore
+            .collection("Users")
+            .doc(userCredential.user!.email)
+            .set({
+              "email": userCredential.user!.email,
+              "username": usernameController.text,
+            });
 
         //create a user document and add to firestore
         createUserDocument(userCredential);
@@ -64,7 +83,9 @@ class _RegisterPageState extends State<RegisterPage> {
           //navigate to login page
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => LoginPage(onTap: widget.onTap)), // Mengarahkan pengguna ke halaman login
+            MaterialPageRoute(
+              builder: (context) => LoginPage(onTap: widget.onTap),
+            ), // Mengarahkan pengguna ke halaman login
           );
         }
       } on FirebaseAuthException catch (e) {
@@ -90,23 +111,25 @@ class _RegisterPageState extends State<RegisterPage> {
         message = 'Email/password accounts are not enabled.';
         break;
       case 'weak-password':
-        message = 'The password is too weak. It should be at least 8 characters long and include a combination of letters and numbers.';
+        message =
+            'The password is too weak. It should be at least 8 characters long and include a combination of letters and numbers.';
         break;
       default:
         message = 'An unknown error occurred.';
     }
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Registration Error'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
+      builder:
+          (context) => AlertDialog(
+            title: Text('Registration Error'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -127,7 +150,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Center(
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(25.0),
           child: Column(
