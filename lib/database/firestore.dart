@@ -1,42 +1,60 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-/* This database stores posts that users have published in the app.
-It is stored in a collection called "Posts" in firebase
-
-Each post contains:
-- a message
-- email of user
-- timestamp
-
- */
+import 'package:minimalsocialmedia/models/post_model.dart';
 
 class FirestoreDatabase {
-  //current logged in user
+  // current logged in user
   User? user = FirebaseAuth.instance.currentUser;
 
-  //get collection of posts from firebase
-  final CollectionReference posts = FirebaseFirestore.instance.collection(
-    "Posts",
-  );
+  // get collection of posts from firebase
+  final CollectionReference posts = FirebaseFirestore.instance.collection("Posts");
 
-  //post a message
-  Future<void> addPost(String message) {
-    return posts.add({
-      'UserEmail': user!.email,
-      'PostMessage': message,
-      'Timestamp': Timestamp.now(),
-    });
+  // Add a post with the new model
+  Future<void> addPost(PostModel post) async {
+    await posts.doc(post.postId).set(post.toMap());
   }
 
-  //read posts from database
-  Stream<QuerySnapshot> getPostsStream() {
-    final postsStream =
-        FirebaseFirestore.instance
-            .collection('Posts')
-            .orderBy('Timestamp', descending: true)
-            .snapshots();
+  // dart
+  Future<void> toggleLike(String postId) async {
+    final uid = user!.uid;
+    DocumentReference postRef = posts.doc(postId);
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(postRef);
+      if (!snapshot.exists) return;
+      final data = snapshot.data() as Map<String, dynamic>;
 
-    return postsStream;
+      // Helper to safely get a value with a default.
+      T getValue<T>(String key, T defaultValue) {
+        if (data.toString().contains(key) && data[key] != null) {
+          return data[key] as T;
+        }
+        return defaultValue;
+      }
+
+      List<dynamic> likedBy = getValue<List<dynamic>>('likedBy', []);
+      int currentLikes = getValue<int>('likes', 0);
+
+      if (likedBy.contains(uid)) {
+        transaction.update(postRef, {
+          'likedBy': FieldValue.arrayRemove([uid]),
+          'likes': currentLikes - 1,
+        });
+      } else {
+        transaction.update(postRef, {
+          'likedBy': FieldValue.arrayUnion([uid]),
+          'likes': currentLikes + 1,
+        });
+      }
+    });
+  }
+  
+  // Add a reply to a post in a sub-collection 'comments'
+  Future<void> addReply(String postId, Map<String, dynamic> replyData) async {
+    await posts.doc(postId).collection('comments').add(replyData);
+  }
+
+  // Read posts sorted by creation date
+  Stream<QuerySnapshot> getPostsStream() {
+    return posts.orderBy('createdAt', descending: true).snapshots();
   }
 }
