@@ -70,13 +70,13 @@ class MyDrawer extends StatelessWidget {
                     Icons.group,
                     color: Theme.of(context).colorScheme.inversePrimary,
                   ),
-                  title: const Text("Users"),
+                  title: const Text("Leaderboard"),
                   onTap: () {
                     //pop drawer
                     Navigator.pop(context);
 
                     //navigate to users page
-                    Navigator.pushNamed(context, "/users_page");
+                    Navigator.pushNamed(context, "/leaderboard_page");
                   },
                 ),
               ),

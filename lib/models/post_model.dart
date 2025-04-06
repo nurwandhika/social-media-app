@@ -1,14 +1,16 @@
 // dart
 class PostModel {
   final String postId;
-  final String title; // up to 50 characters
-  final String caption; // up to 280 characters
-  final List<String> imageUrls; // up to 3
-  final String authorUsername; // use username instead of email
-  final String group; // for future grouping, e.g., Anime, Game, etc.
+  final String title;
+  final String caption;
+  final List<String> imageUrls;
+  final String authorUsername;
+  final String authorEmail; // new field for author's email
+  final String group;
+  final String topic;
   int likes;
   final DateTime createdAt;
-  List<String> likedBy; // new field for tracking users who liked the post
+  List<String> likedBy;
 
   PostModel({
     required this.postId,
@@ -16,7 +18,9 @@ class PostModel {
     required this.caption,
     required this.imageUrls,
     required this.authorUsername,
+    required this.authorEmail,
     required this.group,
+    required this.topic,
     this.likes = 0,
     required this.createdAt,
     this.likedBy = const [],
@@ -29,10 +33,12 @@ class PostModel {
       'caption': caption,
       'imageUrls': imageUrls,
       'authorUsername': authorUsername,
+      'authorEmail': authorEmail, // include in map
       'group': group,
+      'topic': topic,
       'likes': likes,
       'createdAt': createdAt.toIso8601String(),
-      'likedBy': likedBy, // include the likedBy field
+      'likedBy': likedBy,
     };
   }
 }

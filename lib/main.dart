@@ -4,7 +4,7 @@ import 'package:minimalsocialmedia/auth/login_or_register.dart';
 import 'package:minimalsocialmedia/firebase_options.dart';
 import 'package:minimalsocialmedia/pages/home_page.dart';
 import 'package:minimalsocialmedia/pages/profile_page.dart';
-import 'package:minimalsocialmedia/pages/users_page.dart';
+import 'package:minimalsocialmedia/pages/leaderboard_page.dart';
 import 'package:minimalsocialmedia/theme/dark_mode.dart';
 import 'package:minimalsocialmedia/theme/light_mode.dart';
 
@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
         '/login_register_page': (context) => const LoginOrRegister(),
         '/home_page': (context) => HomePage(),
         '/profile_page': (context) => ProfilePage(),
-        '/users_page': (context) => const UsersPage(),
+        '/leaderboard_page': (context) => const LeaderboardPage(),
       },
     );
   }
