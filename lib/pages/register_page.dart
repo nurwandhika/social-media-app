@@ -165,7 +165,19 @@ class _RegisterPageState extends State<RegisterPage> {
 
               const SizedBox(height: 10),
               //app name
-              Text("Q U I C K T A L E", style: TextStyle(fontSize: 20)),
+              //app name
+              Column(
+                children: [
+                  Text(
+                    "R A M B L E E",
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    "where nobody stays on topic",
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ],
+              ),
 
               const SizedBox(height: 25),
 
