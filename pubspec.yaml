@@ -41,6 +41,7 @@ dependencies:
   firebase_storage: ^12.4.4
   permission_handler: ^11.0.0
   path: ^1.8.2
+  intl: ^0.18.1
 
 dev_dependencies:
   flutter_test:
