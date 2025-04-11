@@ -3,6 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:minimalsocialmedia/pages/post_detail_page.dart';
 
+import '../models/post_model.dart';
+import 'home_page.dart';
+
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -46,26 +49,29 @@ class _ProfilePageState extends State<ProfilePage> {
       return [];
     }
 
-    print("Current user email: ${currentUser.email}");
-
     try {
-      final QuerySnapshot postSnapshot =
-          await FirebaseFirestore.instance
-              .collection('Posts')
-              .where('authorEmail', isEqualTo: currentUser.email)
-              .get();
+      print("Querying posts for email: ${currentUser.email}");
+
+      // First try without orderBy to test if the basic query works
+      final QuerySnapshot postSnapshot = await FirebaseFirestore.instance
+          .collection('Posts')
+          .where('authorEmail', isEqualTo: currentUser.email)
+          .get();
 
       print("Query returned ${postSnapshot.docs.length} posts");
 
       if (postSnapshot.docs.isEmpty) {
-        // Try to get all posts to see if any exist
-        final allPosts =
-            await FirebaseFirestore.instance.collection('Posts').limit(5).get();
-        print("Total posts in DB: ${allPosts.docs.length}");
-        if (allPosts.docs.isNotEmpty) {
-          print(
-            "Sample post authorEmail: ${allPosts.docs.first.get('authorEmail')}",
-          );
+        // Debug: Check if we can find any posts by this user
+        final samplePosts = await FirebaseFirestore.instance
+            .collection('Posts')
+            .limit(5)
+            .get();
+
+        print("Sample posts in DB: ${samplePosts.docs.length}");
+
+        if (samplePosts.docs.isNotEmpty) {
+          // Check field names in the first post
+          print("Sample post fields: ${samplePosts.docs.first.data().keys.toList()}");
         }
       }
 
@@ -78,18 +84,18 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.background,
         title: Text(
           "Profile",
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: theme.colorScheme.inversePrimary,
           ),
         ),
       ),
@@ -97,13 +103,25 @@ class _ProfilePageState extends State<ProfilePage> {
         future: getUserDetails(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: CircularProgressIndicator(color: theme.colorScheme.primary),
+            );
           } else if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
+            return Center(
+              child: Text(
+                "Error: ${snapshot.error}",
+                style: theme.textTheme.bodyLarge,
+              ),
+            );
           } else if (snapshot.hasData) {
             Map<String, dynamic>? user = snapshot.data!.data();
             if (user == null) {
-              return const Center(child: Text("No user data found"));
+              return Center(
+                child: Text(
+                  "No user data found",
+                  style: theme.textTheme.bodyLarge,
+                ),
+              );
             }
 
             String username = user['username'] ?? 'Anonymous';
@@ -116,14 +134,20 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   // Profile header
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.all(16),
                     child: Row(
                       children: [
                         // Profile picture
                         CircleAvatar(
                           radius: 40,
-                          backgroundImage: NetworkImage(
-                            "https://i.pravatar.cc/300?u=$email",
+                          backgroundColor: theme.colorScheme.primary,
+                          child: Text(
+                            username.isNotEmpty ? username[0].toUpperCase() : '?',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 24,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 24),
@@ -136,11 +160,10 @@ class _ProfilePageState extends State<ProfilePage> {
                               int postCount = postSnapshot.data?.length ?? 0;
 
                               return Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
-                                  _buildStatColumn(postCount, "Posts"),
-                                  _buildStatColumn(totalLikes, "Likes"),
+                                  _buildStatColumn(postCount, "Posts", theme),
+                                  _buildStatColumn(totalLikes, "Likes", theme),
                                 ],
                               );
                             },
@@ -152,58 +175,24 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   // Username and bio
                   Padding(
-                    padding: const EdgeInsets.only(left: 16, top: 16),
+                    padding: const EdgeInsets.only(left: 16, right: 16),
                     child: Text(
                       username,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                      style: theme.textTheme.titleMedium,
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(left: 16, top: 4, right: 16),
                     child: Text(
                       email,
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                  ),
-
-                  // Edit Profile button
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {},
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: Colors.grey.shade300),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              padding: EdgeInsets.symmetric(vertical: 8),
-                            ),
-                            child: Text(
-                              "Edit Profile",
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      style: theme.textTheme.bodyMedium,
                     ),
                   ),
 
                   // Divider before posts
-                  Divider(),
+                  Divider(color: theme.dividerColor),
 
-                  // Post grid title
+                  // Post title
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -211,20 +200,20 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     child: Text(
                       "Posts",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                      style: theme.textTheme.titleMedium,
                     ),
                   ),
 
-                  // Post grid with actual user posts
-                  // Post grid with actual user posts
+                  // Twitter-style post list
                   FutureBuilder<List<QueryDocumentSnapshot>>(
                     future: getUserPosts(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator());
+                        return Center(
+                          child: CircularProgressIndicator(
+                            color: theme.colorScheme.primary,
+                          ),
+                        );
                       }
 
                       final posts = snapshot.data ?? [];
@@ -236,118 +225,67 @@ class _ProfilePageState extends State<ProfilePage> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                Icons.camera_alt_outlined,
+                                Icons.chat_bubble_outline,
                                 size: 40,
-                                color: Colors.grey,
+                                color: theme.iconTheme.color,
                               ),
-                              SizedBox(height: 16),
+                              const SizedBox(height: 16),
                               Text(
                                 "No Posts Yet",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                                style: theme.textTheme.titleMedium,
                               ),
                             ],
                           ),
                         );
                       }
 
-                      // Create a grid of actual posts
-                      return GridView.builder(
+                      // Twitter-style post list
+                      return ListView.builder(
                         shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        padding: EdgeInsets.all(2),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 2,
-                          mainAxisSpacing: 2,
-                        ),
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.zero,
                         itemCount: posts.length,
                         itemBuilder: (context, index) {
-                          final postData =
-                              posts[index].data() as Map<String, dynamic>;
-                          final List<dynamic> imageUrls =
-                              postData["imageUrls"] ?? [];
-                          final String title = postData["title"] ?? '';
-                          final String postId = postData["postId"] ?? '';
+                          final postData = posts[index].data() as Map<String, dynamic>;
+                          final postId = posts[index].id;
+                          final content = postData["content"] ?? postData["caption"] ?? '';
+                          final authorUsername = postData["authorUsername"] ?? '';
+                          final authorEmail = postData["authorEmail"] ?? '';
+                          final likes = postData["likes"] ?? 0;
+                          final likedBy = postData.containsKey("likedBy")
+                              ? List<String>.from(postData["likedBy"])
+                              : <String>[];
+                          final createdAt = postData["createdAt"] != null
+                              ? DateTime.parse(postData["createdAt"])
+                              : DateTime.now();
 
-                          return GestureDetector(
-                            onTap: () {
+                          final post = PostModel(
+                            postId: postId,
+                            content: content,
+                            authorUsername: authorUsername,
+                            authorEmail: authorEmail,
+                            likes: likes,
+                            createdAt: createdAt,
+                            likedBy: likedBy,
+                          );
+
+                          return TwitterPostCard(
+                            post: post,
+                            onLike: () {
+                              // Handle like functionality
+                              FirebaseFirestore.instance.collection('Posts')
+                                  .doc(postId).update({
+                                'likes': FieldValue.increment(1)
+                              });
+                            },
+                            onReply: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder:
-                                      (context) =>
-                                          PostDetailPage(postId: postId),
+                                  builder: (context) => PostDetailPage(postId: postId),
                                 ),
                               );
                             },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                border: Border.all(
-                                  color: Colors.grey.shade300,
-                                  width: 0.5,
-                                ),
-                              ),
-                              child:
-                                  imageUrls.isNotEmpty
-                                      ? Image.network(
-                                        imageUrls[0],
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (
-                                          context,
-                                          error,
-                                          stackTrace,
-                                        ) {
-                                          // Fallback for image loading errors
-                                          return Container(
-                                            color: Colors.grey[300],
-                                            child: Center(
-                                              child: Text(
-                                                title,
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(fontSize: 14),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        loadingBuilder: (
-                                          context,
-                                          child,
-                                          loadingProgress,
-                                        ) {
-                                          if (loadingProgress == null)
-                                            return child;
-                                          return Center(
-                                            child: CircularProgressIndicator(
-                                              value:
-                                                  loadingProgress
-                                                              .expectedTotalBytes !=
-                                                          null
-                                                      ? loadingProgress
-                                                              .cumulativeBytesLoaded /
-                                                          loadingProgress
-                                                              .expectedTotalBytes!
-                                                      : null,
-                                              strokeWidth: 2.0,
-                                            ),
-                                          );
-                                        },
-                                      )
-                                      : Center(
-                                        child: Text(
-                                          title,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(fontSize: 14),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                            ),
                           );
                         },
                       );
@@ -357,39 +295,51 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             );
           } else {
-            return const Center(child: Text("No data"));
+            return Center(
+              child: Text(
+                "No data",
+                style: theme.textTheme.bodyLarge,
+              ),
+            );
           }
         },
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           border: Border(
-            top: BorderSide(color: Colors.grey.shade300, width: 0.5),
+            top: BorderSide(color: theme.dividerColor, width: 0.5),
           ),
+          color: theme.colorScheme.background,
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: theme.shadowColor.withOpacity(0.1),
               blurRadius: 4,
-              offset: Offset(0, -1),
+              offset: const Offset(0, -1),
             ),
           ],
         ),
         child: BottomAppBar(
           elevation: 0,
-          color: Colors.white,
+          color: theme.colorScheme.background,
           child: SizedBox(
             height: 56.0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: <Widget>[
                 IconButton(
-                  icon: Icon(Icons.home_outlined, color: Colors.grey),
+                  icon: Icon(
+                    Icons.home_outlined,
+                    color: theme.iconTheme.color,
+                  ),
                   onPressed: () {
                     Navigator.pushReplacementNamed(context, '/');
                   },
                 ),
                 IconButton(
-                  icon: Icon(Icons.explore_outlined, color: Colors.grey),
+                  icon: Icon(
+                    Icons.explore_outlined,
+                    color: theme.iconTheme.color,
+                  ),
                   onPressed: () {},
                 ),
                 // Add button - center
@@ -397,30 +347,29 @@ class _ProfilePageState extends State<ProfilePage> {
                   width: 48,
                   height: 30,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.blue, Colors.purple],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: theme.colorScheme.primary,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
                     padding: EdgeInsets.zero,
-                    icon: Icon(Icons.add, color: Colors.white, size: 26),
+                    icon: const Icon(Icons.add, color: Colors.white, size: 26),
                     onPressed: () {},
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.emoji_events_outlined, color: Colors.grey),
+                  icon: Icon(
+                    Icons.emoji_events_outlined,
+                    color: theme.iconTheme.color,
+                  ),
                   onPressed: () {
-                    Navigator.pushReplacementNamed(
-                      context,
-                      '/leaderboard_page',
-                    );
+                    Navigator.pushReplacementNamed(context, '/leaderboard_page');
                   },
                 ),
                 IconButton(
-                  icon: Icon(Icons.person, color: Colors.black),
+                  icon: Icon(
+                    Icons.person,
+                    color: theme.colorScheme.primary,
+                  ),
                   onPressed: () {},
                 ),
               ],
@@ -431,16 +380,19 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildStatColumn(int count, String label) {
+  Widget _buildStatColumn(int count, String label, ThemeData theme) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           count.toString(),
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: theme.textTheme.titleLarge,
         ),
-        SizedBox(height: 4),
-        Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: theme.textTheme.bodyMedium,
+        ),
       ],
     );
   }

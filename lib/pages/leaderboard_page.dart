@@ -10,7 +10,7 @@ class LeaderboardPage extends StatefulWidget {
 
 class _LeaderboardPageState extends State<LeaderboardPage> {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
-  int _selectedIndex = 3; // Add this to fix the undefined variable error
+  int _selectedIndex = 3;
 
   Stream<QuerySnapshot> getLeaderboardStream() {
     return firestore
@@ -22,18 +22,18 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.background,
         title: Text(
           "Leaderboard",
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: theme.colorScheme.inversePrimary,
           ),
         ),
       ),
@@ -41,7 +41,11 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
         stream: getLeaderboardStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: CircularProgressIndicator(
+                color: theme.colorScheme.primary,
+              ),
+            );
           }
           if (!snapshot.hasData ||
               snapshot.data == null ||
@@ -49,7 +53,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
             return Center(
               child: Text(
                 "No leaderboard data available",
-                style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                style: theme.textTheme.bodyLarge,
               ),
             );
           }
@@ -58,14 +62,14 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
 
           return ListView.builder(
             itemCount: leaderboardDocs.length,
-            padding: EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             itemBuilder: (context, index) {
               final doc = leaderboardDocs[index].data() as Map<String, dynamic>;
               final username = doc['username'] ?? 'Anonymous';
               final totalLikes = doc['totalLikes'] ?? 0;
 
               // Styling for top 3 ranks
-              Color rankColor = Colors.grey.shade600;
+              Color rankColor;
               Widget rankWidget;
 
               if (index == 0) {
@@ -77,7 +81,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                     color: rankColor,
                     shape: BoxShape.circle,
                   ),
-                  child: Center(
+                  child: const Center(
                     child: Text(
                       '1',
                       style: TextStyle(
@@ -96,7 +100,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                     color: rankColor,
                     shape: BoxShape.circle,
                   ),
-                  child: Center(
+                  child: const Center(
                     child: Text(
                       '2',
                       style: TextStyle(
@@ -115,7 +119,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                     color: rankColor,
                     shape: BoxShape.circle,
                   ),
-                  child: Center(
+                  child: const Center(
                     child: Text(
                       '3',
                       style: TextStyle(
@@ -126,7 +130,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                   ),
                 );
               } else {
-                rankWidget = Container(
+                rankWidget = SizedBox(
                   width: 32,
                   height: 32,
                   child: Center(
@@ -134,7 +138,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                       '${index + 1}',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: theme.colorScheme.inversePrimary,
                         fontSize: 16,
                       ),
                     ),
@@ -143,77 +147,70 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
               }
 
               return Container(
-                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.colorScheme.background,
                   borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.08),
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
+                  border: Border.all(color: theme.dividerColor, width: 0.5),
                 ),
                 child: Row(
                   children: [
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     rankWidget,
-                    SizedBox(width: 16),
+                    const SizedBox(width: 16),
                     CircleAvatar(
                       radius: 24,
-                      backgroundImage: NetworkImage(
-                        "https://i.pravatar.cc/150?u=$username",
+                      backgroundColor: theme.colorScheme.primary,
+                      child: Text(
+                        username.isNotEmpty ? username[0].toUpperCase() : '?',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
                     ),
-                    SizedBox(width: 16),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             username,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
+                            style: theme.textTheme.titleMedium,
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             "Posts liked $totalLikes times",
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
+                            style: theme.textTheme.bodyMedium,
                           ),
                         ],
                       ),
                     ),
                     Container(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: theme.colorScheme.secondary,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.favorite, color: Colors.red, size: 16),
-                          SizedBox(width: 4),
+                          const Icon(Icons.favorite, color: Colors.red, size: 16),
+                          const SizedBox(width: 4),
                           Text(
                             "$totalLikes",
-                            style: TextStyle(
+                            style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              fontSize: 14,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                   ],
                 ),
               );
@@ -224,32 +221,39 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           border: Border(
-            top: BorderSide(color: Colors.grey.shade300, width: 0.5),
+            top: BorderSide(color: theme.dividerColor, width: 0.5),
           ),
+          color: theme.colorScheme.background,
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: theme.shadowColor.withOpacity(0.1),
               blurRadius: 4,
-              offset: Offset(0, -1),
+              offset: const Offset(0, -1),
             ),
           ],
         ),
         child: BottomAppBar(
           elevation: 0,
-          color: Colors.white,
+          color: theme.colorScheme.background,
           child: SizedBox(
             height: 56.0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: <Widget>[
                 IconButton(
-                  icon: Icon(Icons.home_outlined, color: Colors.grey),
+                  icon: Icon(
+                    Icons.home_outlined,
+                    color: theme.iconTheme.color,
+                  ),
                   onPressed: () {
                     Navigator.pushReplacementNamed(context, '/');
                   },
                 ),
                 IconButton(
-                  icon: Icon(Icons.explore_outlined, color: Colors.grey),
+                  icon: Icon(
+                    Icons.explore_outlined,
+                    color: theme.iconTheme.color,
+                  ),
                   onPressed: () {},
                 ),
                 // Add button - center
@@ -257,32 +261,29 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                   width: 48,
                   height: 30,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.blue, Colors.purple],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: theme.colorScheme.primary,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
                     padding: EdgeInsets.zero,
-                    icon: Icon(Icons.add, color: Colors.white, size: 26),
+                    icon: const Icon(Icons.add, color: Colors.white, size: 26),
                     onPressed: () {},
                   ),
                 ),
                 IconButton(
                   icon: Icon(
-                    _selectedIndex == 3
-                        ? Icons.emoji_events
-                        : Icons.emoji_events_outlined,
-                    color: Colors.black, // Selected color
+                    Icons.emoji_events,
+                    color: theme.colorScheme.primary, // Selected color
                   ),
                   onPressed: () {
                     // Already on leaderboard page
                   },
                 ),
                 IconButton(
-                  icon: Icon(Icons.person_outline, color: Colors.grey),
+                  icon: Icon(
+                    Icons.person_outline,
+                    color: theme.iconTheme.color,
+                  ),
                   onPressed: () {
                     Navigator.pushReplacementNamed(context, '/profile_page');
                   },
