@@ -5,7 +5,6 @@ import 'package:minimalsocialmedia/database/firestore.dart';
 import 'package:minimalsocialmedia/models/post_model.dart';
 import 'package:minimalsocialmedia/pages/create_post_dialog.dart';
 import 'package:minimalsocialmedia/pages/post_detail_page.dart';
-// import 'package:timeago/timeago.dart' as timeago;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -76,10 +75,7 @@ class _HomePageState extends State<HomePage> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(25.0),
-                child: Text(
-                  "No posts yet",
-                  style: theme.textTheme.bodyLarge,
-                ),
+                child: Text("No posts yet", style: theme.textTheme.bodyLarge),
               ),
             );
           }
@@ -87,7 +83,6 @@ class _HomePageState extends State<HomePage> {
             padding: EdgeInsets.zero,
             itemCount: postsDocs.length,
             itemBuilder: (context, index) {
-              // Post data extraction remains the same
               final doc = postsDocs[index];
               final data = doc.data() as Map<String, dynamic>;
 
@@ -96,12 +91,14 @@ class _HomePageState extends State<HomePage> {
               final authorUsername = data["authorUsername"] ?? '';
               final authorEmail = data["authorEmail"] ?? '';
               final likes = data["likes"] ?? 0;
-              final likedBy = data.containsKey("likedBy")
-                  ? List<String>.from(data["likedBy"])
-                  : <String>[];
-              final createdAt = data["createdAt"] != null
-                  ? DateTime.parse(data["createdAt"])
-                  : DateTime.now();
+              final likedBy =
+                  data.containsKey("likedBy")
+                      ? List<String>.from(data["likedBy"])
+                      : <String>[];
+              final createdAt =
+                  data["createdAt"] != null
+                      ? DateTime.parse(data["createdAt"])
+                      : DateTime.now();
 
               final post = PostModel(
                 postId: postId,
@@ -162,25 +159,18 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: <Widget>[
                 IconButton(
-                  icon: Icon(
-                    _selectedIndex == 0 ? Icons.home : Icons.home_outlined,
-                    color: _selectedIndex == 0 ? theme.colorScheme.primary : theme.iconTheme.color,
-                  ),
+                  icon: Icon(Icons.home, color: theme.colorScheme.primary),
                   onPressed: () {
-                    setState(() {
-                      _selectedIndex = 0;
-                    });
+                    // Already on home
                   },
                 ),
                 IconButton(
                   icon: Icon(
-                    _selectedIndex == 1 ? Icons.explore : Icons.explore_outlined,
-                    color: _selectedIndex == 1 ? theme.colorScheme.primary : theme.iconTheme.color,
+                    Icons.explore_outlined,
+                    color: theme.iconTheme.color,
                   ),
                   onPressed: () {
-                    setState(() {
-                      _selectedIndex = 1;
-                    });
+                    Navigator.pushReplacementNamed(context, '/explore_page');
                   },
                 ),
                 Container(
@@ -198,26 +188,23 @@ class _HomePageState extends State<HomePage> {
                 ),
                 IconButton(
                   icon: Icon(
-                    _selectedIndex == 3 ? Icons.emoji_events : Icons.emoji_events_outlined,
-                    color: _selectedIndex == 3 ? theme.colorScheme.primary : theme.iconTheme.color,
+                    Icons.emoji_events_outlined,
+                    color: theme.iconTheme.color,
                   ),
                   onPressed: () {
-                    setState(() {
-                      _selectedIndex = 3;
-                    });
-                    Navigator.pushNamed(context, '/leaderboard_page');
+                    Navigator.pushReplacementNamed(
+                      context,
+                      '/leaderboard_page',
+                    );
                   },
                 ),
                 IconButton(
                   icon: Icon(
-                    _selectedIndex == 4 ? Icons.person : Icons.person_outline,
-                    color: _selectedIndex == 4 ? theme.colorScheme.primary : theme.iconTheme.color,
+                    Icons.person_outline,
+                    color: theme.iconTheme.color,
                   ),
                   onPressed: () {
-                    setState(() {
-                      _selectedIndex = 4;
-                    });
-                    Navigator.pushNamed(context, '/profile_page');
+                    Navigator.pushReplacementNamed(context, '/profile_page');
                   },
                 ),
               ],
@@ -245,7 +232,8 @@ class TwitterPostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final currentUserEmail = FirebaseAuth.instance.currentUser?.email;
-    final isLiked = currentUserEmail != null && post.likedBy.contains(currentUserEmail);
+    final isLiked =
+        currentUserEmail != null && post.likedBy.contains(currentUserEmail);
 
     return Container(
       width: double.infinity,
@@ -265,15 +253,17 @@ class TwitterPostCard extends StatelessWidget {
               CircleAvatar(
                 backgroundColor: theme.colorScheme.primary,
                 child: Text(
-                  post.authorUsername.isNotEmpty ? post.authorUsername[0].toUpperCase() : '?',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  post.authorUsername.isNotEmpty
+                      ? post.authorUsername[0].toUpperCase()
+                      : '?',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                post.authorUsername,
-                style: theme.textTheme.titleMedium,
-              ),
+              Text(post.authorUsername, style: theme.textTheme.titleMedium),
               const Spacer(),
               Text(
                 _formatTimeAgo(post.createdAt),
@@ -285,10 +275,7 @@ class TwitterPostCard extends StatelessWidget {
           // Tweet content
           Padding(
             padding: const EdgeInsets.only(top: 10, bottom: 12, left: 4),
-            child: Text(
-              post.content,
-              style: theme.textTheme.bodyLarge,
-            ),
+            child: Text(post.content, style: theme.textTheme.bodyLarge),
           ),
 
           // Action buttons
@@ -328,10 +315,7 @@ class TwitterPostCard extends StatelessWidget {
                     constraints: const BoxConstraints(),
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                   ),
-                  Text(
-                    "Reply",
-                    style: theme.textTheme.bodyMedium,
-                  ),
+                  Text("Reply", style: theme.textTheme.bodyMedium),
                 ],
               ),
             ],

@@ -7,10 +7,14 @@ import '../models/post_model.dart';
 import 'home_page.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final String? userEmail; // Optional - if null, shows current user
+  final bool isCurrentUser;
+
+  const ProfilePage({Key? key, this.userEmail, this.isCurrentUser = true})
+    : super(key: key);
 
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  _ProfilePageState createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
@@ -53,25 +57,26 @@ class _ProfilePageState extends State<ProfilePage> {
       print("Querying posts for email: ${currentUser.email}");
 
       // First try without orderBy to test if the basic query works
-      final QuerySnapshot postSnapshot = await FirebaseFirestore.instance
-          .collection('Posts')
-          .where('authorEmail', isEqualTo: currentUser.email)
-          .get();
+      final QuerySnapshot postSnapshot =
+          await FirebaseFirestore.instance
+              .collection('Posts')
+              .where('authorEmail', isEqualTo: currentUser.email)
+              .get();
 
       print("Query returned ${postSnapshot.docs.length} posts");
 
       if (postSnapshot.docs.isEmpty) {
         // Debug: Check if we can find any posts by this user
-        final samplePosts = await FirebaseFirestore.instance
-            .collection('Posts')
-            .limit(5)
-            .get();
+        final samplePosts =
+            await FirebaseFirestore.instance.collection('Posts').limit(5).get();
 
         print("Sample posts in DB: ${samplePosts.docs.length}");
 
         if (samplePosts.docs.isNotEmpty) {
           // Check field names in the first post
-          print("Sample post fields: ${samplePosts.docs.first.data().keys.toList()}");
+          print(
+            "Sample post fields: ${samplePosts.docs.first.data().keys.toList()}",
+          );
         }
       }
 
@@ -104,7 +109,9 @@ class _ProfilePageState extends State<ProfilePage> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
-              child: CircularProgressIndicator(color: theme.colorScheme.primary),
+              child: CircularProgressIndicator(
+                color: theme.colorScheme.primary,
+              ),
             );
           } else if (snapshot.hasError) {
             return Center(
@@ -142,7 +149,9 @@ class _ProfilePageState extends State<ProfilePage> {
                           radius: 40,
                           backgroundColor: theme.colorScheme.primary,
                           child: Text(
-                            username.isNotEmpty ? username[0].toUpperCase() : '?',
+                            username.isNotEmpty
+                                ? username[0].toUpperCase()
+                                : '?',
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -160,7 +169,8 @@ class _ProfilePageState extends State<ProfilePage> {
                               int postCount = postSnapshot.data?.length ?? 0;
 
                               return Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
                                 children: [
                                   _buildStatColumn(postCount, "Posts", theme),
                                   _buildStatColumn(totalLikes, "Likes", theme),
@@ -176,17 +186,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   // Username and bio
                   Padding(
                     padding: const EdgeInsets.only(left: 16, right: 16),
-                    child: Text(
-                      username,
-                      style: theme.textTheme.titleMedium,
-                    ),
+                    child: Text(username, style: theme.textTheme.titleMedium),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(left: 16, top: 4, right: 16),
-                    child: Text(
-                      email,
-                      style: theme.textTheme.bodyMedium,
-                    ),
+                    child: Text(email, style: theme.textTheme.bodyMedium),
                   ),
 
                   // Divider before posts
@@ -198,10 +202,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       horizontal: 16,
                       vertical: 8,
                     ),
-                    child: Text(
-                      "Posts",
-                      style: theme.textTheme.titleMedium,
-                    ),
+                    child: Text("Posts", style: theme.textTheme.titleMedium),
                   ),
 
                   // Twitter-style post list
@@ -246,18 +247,23 @@ class _ProfilePageState extends State<ProfilePage> {
                         padding: EdgeInsets.zero,
                         itemCount: posts.length,
                         itemBuilder: (context, index) {
-                          final postData = posts[index].data() as Map<String, dynamic>;
+                          final postData =
+                              posts[index].data() as Map<String, dynamic>;
                           final postId = posts[index].id;
-                          final content = postData["content"] ?? postData["caption"] ?? '';
-                          final authorUsername = postData["authorUsername"] ?? '';
+                          final content =
+                              postData["content"] ?? postData["caption"] ?? '';
+                          final authorUsername =
+                              postData["authorUsername"] ?? '';
                           final authorEmail = postData["authorEmail"] ?? '';
                           final likes = postData["likes"] ?? 0;
-                          final likedBy = postData.containsKey("likedBy")
-                              ? List<String>.from(postData["likedBy"])
-                              : <String>[];
-                          final createdAt = postData["createdAt"] != null
-                              ? DateTime.parse(postData["createdAt"])
-                              : DateTime.now();
+                          final likedBy =
+                              postData.containsKey("likedBy")
+                                  ? List<String>.from(postData["likedBy"])
+                                  : <String>[];
+                          final createdAt =
+                              postData["createdAt"] != null
+                                  ? DateTime.parse(postData["createdAt"])
+                                  : DateTime.now();
 
                           final post = PostModel(
                             postId: postId,
@@ -273,16 +279,18 @@ class _ProfilePageState extends State<ProfilePage> {
                             post: post,
                             onLike: () {
                               // Handle like functionality
-                              FirebaseFirestore.instance.collection('Posts')
-                                  .doc(postId).update({
-                                'likes': FieldValue.increment(1)
-                              });
+                              FirebaseFirestore.instance
+                                  .collection('Posts')
+                                  .doc(postId)
+                                  .update({'likes': FieldValue.increment(1)});
                             },
                             onReply: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => PostDetailPage(postId: postId),
+                                  builder:
+                                      (context) =>
+                                          PostDetailPage(postId: postId),
                                 ),
                               );
                             },
@@ -296,10 +304,7 @@ class _ProfilePageState extends State<ProfilePage> {
             );
           } else {
             return Center(
-              child: Text(
-                "No data",
-                style: theme.textTheme.bodyLarge,
-              ),
+              child: Text("No data", style: theme.textTheme.bodyLarge),
             );
           }
         },
@@ -327,10 +332,7 @@ class _ProfilePageState extends State<ProfilePage> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: <Widget>[
                 IconButton(
-                  icon: Icon(
-                    Icons.home_outlined,
-                    color: theme.iconTheme.color,
-                  ),
+                  icon: Icon(Icons.home_outlined, color: theme.iconTheme.color),
                   onPressed: () {
                     Navigator.pushReplacementNamed(context, '/');
                   },
@@ -340,9 +342,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     Icons.explore_outlined,
                     color: theme.iconTheme.color,
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushReplacementNamed(context, '/explore_page');
+                  },
                 ),
-                // Add button - center
                 Container(
                   width: 48,
                   height: 30,
@@ -362,14 +365,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     color: theme.iconTheme.color,
                   ),
                   onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/leaderboard_page');
+                    Navigator.pushReplacementNamed(
+                      context,
+                      '/leaderboard_page',
+                    );
                   },
                 ),
                 IconButton(
-                  icon: Icon(
-                    Icons.person,
-                    color: theme.colorScheme.primary,
-                  ),
+                  icon: Icon(Icons.person, color: theme.colorScheme.primary),
                   onPressed: () {},
                 ),
               ],
@@ -384,15 +387,9 @@ class _ProfilePageState extends State<ProfilePage> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          count.toString(),
-          style: theme.textTheme.titleLarge,
-        ),
+        Text(count.toString(), style: theme.textTheme.titleLarge),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: theme.textTheme.bodyMedium,
-        ),
+        Text(label, style: theme.textTheme.bodyMedium),
       ],
     );
   }

@@ -7,6 +7,7 @@ import 'package:minimalsocialmedia/pages/profile_page.dart';
 import 'package:minimalsocialmedia/pages/leaderboard_page.dart';
 import 'package:minimalsocialmedia/theme/dark_mode.dart';
 import 'package:minimalsocialmedia/theme/light_mode.dart';
+import 'package:minimalsocialmedia/pages/explore_page.dart';
 
 import 'auth/auth.dart';
 
@@ -28,8 +29,9 @@ class MyApp extends StatelessWidget {
       darkTheme: darkMode,
       routes: {
         '/login_register_page': (context) => const LoginOrRegister(),
-        '/home_page': (context) => HomePage(),
-        '/profile_page': (context) => ProfilePage(),
+        '/home_page': (context) => const HomePage(),
+        '/explore_page': (context) => const ExplorePage(),
+        '/profile_page': (context) => const ProfilePage(),
         '/leaderboard_page': (context) => const LeaderboardPage(),
       },
     );

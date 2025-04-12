@@ -254,7 +254,9 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                     Icons.explore_outlined,
                     color: theme.iconTheme.color,
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushReplacementNamed(context, '/explore_page');
+                  },
                 ),
                 // Add button - center
                 Container(
