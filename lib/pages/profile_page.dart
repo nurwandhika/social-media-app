@@ -105,41 +105,54 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         actions: [
           IconButton(
-            icon: Icon(
-              Icons.logout_rounded,
-              color: theme.colorScheme.primary,
-            ),
+            icon: Icon(Icons.logout_rounded, color: theme.iconTheme.color),
             onPressed: () async {
               // Show confirmation dialog
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text('Log Out', style: theme.textTheme.titleMedium),
-                  content: Text('Are you sure you want to log out?',
-                      style: theme.textTheme.bodyMedium),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: Text('Cancel',
-                          style: TextStyle(color: theme.colorScheme.secondary)),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: Text('Log Out',
-                          style: TextStyle(color: theme.colorScheme.primary)),
-                    ),
-                  ],
-                ),
-              ) ?? false;
+              final confirm =
+                  await showDialog<bool>(
+                    context: context,
+                    builder:
+                        (context) => AlertDialog(
+                          title: Text(
+                            'Log Out',
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          content: Text(
+                            'Are you sure you want to log out?',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: theme.colorScheme.secondary,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: Text(
+                                'Log Out',
+                                style: TextStyle(
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                  ) ??
+                  false;
 
               // If confirmed, log out
               if (confirm && context.mounted) {
                 await FirebaseAuth.instance.signOut();
                 // Navigate to login screen
                 Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/login_register_page',
-                        (route) => false
+                  context,
+                  '/login_register_page',
+                  (route) => false,
                 );
               }
             },
