@@ -148,7 +148,10 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
 
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 8,
+                ),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.background,
                   borderRadius: BorderRadius.circular(8),
@@ -176,10 +179,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            username,
-                            style: theme.textTheme.titleMedium,
-                          ),
+                          Text(username, style: theme.textTheme.titleMedium),
                           const SizedBox(height: 2),
                           Text(
                             "Posts liked $totalLikes times",
@@ -199,7 +199,11 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.favorite, color: Colors.red, size: 16),
+                          const Icon(
+                            Icons.favorite,
+                            color: Colors.red,
+                            size: 16,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             "$totalLikes",
@@ -241,10 +245,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: <Widget>[
                 IconButton(
-                  icon: Icon(
-                    Icons.home_outlined,
-                    color: theme.iconTheme.color,
-                  ),
+                  icon: Icon(Icons.home_outlined, color: theme.iconTheme.color),
                   onPressed: () {
                     Navigator.pushReplacementNamed(context, '/');
                   },

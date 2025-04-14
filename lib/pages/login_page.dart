@@ -19,26 +19,26 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  //text controller
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  //login method - fixed structure
   void login() async {
-    //show loading circle
     showDialog(
       context: context,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      builder:
+          (context) => Center(
+            child: CircularProgressIndicator(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
     );
 
-    //try sign in
     try {
       await widget.auth.signInWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
       );
 
-      //pop loading circle
       if (context.mounted) {
         Navigator.pop(context);
         Navigator.pushReplacement(
@@ -47,17 +47,17 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
     } on FirebaseAuthException catch (e) {
-      //pop loading circle
       if (context.mounted) {
         Navigator.pop(context);
       }
-      //display error message to user
       displayMessageToUser(e.code, context);
     }
   }
 
   void displayMessageToUser(String code, BuildContext context) {
+    final theme = Theme.of(context);
     String message;
+
     switch (code) {
       case 'user-not-found':
         message = 'No user found for that email.';
@@ -74,16 +74,24 @@ class _LoginPageState extends State<LoginPage> {
       default:
         message = 'An unknown error occurred.';
     }
+
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text('Login Error'),
-            content: Text(message),
+            backgroundColor: theme.cardColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: Text('Login Error', style: theme.textTheme.titleMedium),
+            content: Text(message, style: theme.textTheme.bodyMedium),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('OK'),
+                child: Text(
+                  'OK',
+                  style: TextStyle(color: theme.colorScheme.primary),
+                ),
               ),
             ],
           ),
@@ -92,93 +100,115 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(25.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              //logo
-              Icon(
-                Icons.person,
-                size: 80,
-                color: Theme.of(context).colorScheme.inversePrimary,
-              ),
+    final theme = Theme.of(context);
 
-              const SizedBox(height: 25),
-              //app name
-              Column(
+    return Scaffold(
+      backgroundColor: theme.colorScheme.background,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(25.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // Logo
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: theme.colorScheme.primary.withOpacity(0.1),
+                    ),
+                    child: Icon(
+                      Icons.person,
+                      size: 70,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // App name
                   Text(
                     "R A M B L E E",
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.inversePrimary,
+                    ),
                   ),
                   Text(
                     "where nobody stays on topic",
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 50),
-
-              //email textfield
-              MyTextfield(
-                hintText: "Email",
-                obscureText: false,
-                controller: emailController,
-              ),
-
-              const SizedBox(height: 10),
-
-              //password textfield
-              MyTextfield(
-                hintText: "Password",
-                obscureText: true,
-                controller: passwordController,
-              ),
-              const SizedBox(height: 10),
-              //forgot password
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    "Forgot Password?",
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.secondary,
+                      fontSize: 16,
+                      color: theme.colorScheme.tertiary,
                     ),
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // Email textfield
+                  MyTextfield(
+                    hintText: "Email",
+                    obscureText: false,
+                    controller: emailController,
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  // Password textfield
+                  MyTextfield(
+                    hintText: "Password",
+                    obscureText: true,
+                    controller: passwordController,
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Forgot password
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        "Forgot Password?",
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // Sign in button
+                  MyButton(text: "Login", onTap: login),
+
+                  const SizedBox(height: 25),
+
+                  // Don't have account register here
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Don't have an account?",
+                        style: TextStyle(color: theme.colorScheme.tertiary),
+                      ),
+                      GestureDetector(
+                        onTap: widget.onTap,
+                        child: Text(
+                          " Register Here",
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 25),
-
-              //sign in button
-              MyButton(text: "Login", onTap: login),
-
-              const SizedBox(height: 25),
-
-              //don't have account register here
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Don't have an account ?",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.inversePrimary,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: widget.onTap,
-                    child: Text(
-                      "  Register Here",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),

@@ -1,10 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:minimalsocialmedia/database/firestore.dart';
+import 'package:minimalsocialmedia/database/firestore_database.dart';
 
 class PostDetailPage extends StatefulWidget {
   final String postId;
+
   const PostDetailPage({Key? key, required this.postId}) : super(key: key);
 
   @override
@@ -28,12 +29,29 @@ class _PostDetailPageState extends State<PostDetailPage> {
   String formatDate(DateTime? dateTime) {
     if (dateTime == null) return '';
 
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     final day = dateTime.day;
     final month = months[dateTime.month - 1];
     final year = dateTime.year;
-    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour == 0 ? 12 : dateTime.hour;
+    final hour =
+        dateTime.hour > 12
+            ? dateTime.hour - 12
+            : dateTime.hour == 0
+            ? 12
+            : dateTime.hour;
     final minute = dateTime.minute.toString().padLeft(2, '0');
     final period = dateTime.hour >= 12 ? 'PM' : 'AM';
 
@@ -43,11 +61,28 @@ class _PostDetailPageState extends State<PostDetailPage> {
   String formatCommentDate(DateTime? dateTime) {
     if (dateTime == null) return '';
 
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     final day = dateTime.day;
     final month = months[dateTime.month - 1];
-    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour == 0 ? 12 : dateTime.hour;
+    final hour =
+        dateTime.hour > 12
+            ? dateTime.hour - 12
+            : dateTime.hour == 0
+            ? 12
+            : dateTime.hour;
     final minute = dateTime.minute.toString().padLeft(2, '0');
     final period = dateTime.hour >= 12 ? 'PM' : 'AM';
 
@@ -68,15 +103,17 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
       // Verify user is authenticated with recent sign in
       if (currentUser.metadata.lastSignInTime == null ||
-          DateTime.now().difference(currentUser.metadata.lastSignInTime!) > const Duration(hours: 1)) {
+          DateTime.now().difference(currentUser.metadata.lastSignInTime!) >
+              const Duration(hours: 1)) {
         await currentUser.reload();
       }
 
       // Retrieve the user document
-      DocumentSnapshot<Map<String, dynamic>> userDoc = await FirebaseFirestore.instance
-          .collection("Users")
-          .doc(currentUser.email)
-          .get();
+      DocumentSnapshot<Map<String, dynamic>> userDoc =
+          await FirebaseFirestore.instance
+              .collection("Users")
+              .doc(currentUser.email)
+              .get();
 
       String accountUsername = userDoc.data()?['username'] ?? "Anonymous";
       final uid = currentUser.uid;
@@ -91,11 +128,12 @@ class _PostDetailPageState extends State<PostDetailPage> {
       await database.addReply(widget.postId, replyData);
       replyController.clear();
       FocusScope.of(context).unfocus();
-
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Unable to post comment: ${e.toString().replaceAll(RegExp(r'\[.*\]'), '')}'),
+          content: Text(
+            'Unable to post comment: ${e.toString().replaceAll(RegExp(r'\[.*\]'), '')}',
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 4),
           action: SnackBarAction(
@@ -133,7 +171,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
-                    child: CircularProgressIndicator(color: theme.colorScheme.primary),
+                    child: CircularProgressIndicator(
+                      color: theme.colorScheme.primary,
+                    ),
                   ),
                 );
               }
@@ -191,7 +231,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
                           backgroundColor: theme.colorScheme.primary,
                           radius: 20,
                           child: Text(
-                            data['authorUsername']?.toString().isNotEmpty == true
+                            data['authorUsername']?.toString().isNotEmpty ==
+                                    true
                                 ? data['authorUsername'][0].toUpperCase()
                                 : '?',
                             style: TextStyle(
@@ -250,13 +291,13 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
           // Comments header
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: Row(
               children: [
-                Text(
-                  "Comments",
-                  style: theme.textTheme.titleMedium,
-                ),
+                Text("Comments", style: theme.textTheme.titleMedium),
                 const SizedBox(width: 8),
                 Icon(
                   Icons.chat_bubble_outline,
@@ -272,15 +313,18 @@ class _PostDetailPageState extends State<PostDetailPage> {
           // Comments list
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: database.posts
-                  .doc(widget.postId)
-                  .collection("comments")
-                  .orderBy("timestamp", descending: false)
-                  .snapshots(),
+              stream:
+                  database.posts
+                      .doc(widget.postId)
+                      .collection("comments")
+                      .orderBy("timestamp", descending: false)
+                      .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return Center(
-                    child: CircularProgressIndicator(color: theme.colorScheme.primary),
+                    child: CircularProgressIndicator(
+                      color: theme.colorScheme.primary,
+                    ),
                   );
                 }
 
@@ -314,17 +358,20 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 return ListView.separated(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: repliesDocs.length,
-                  separatorBuilder: (context, index) => Divider(
-                    color: theme.dividerColor.withOpacity(0.5),
-                    height: 1,
-                  ),
+                  separatorBuilder:
+                      (context, index) => Divider(
+                        color: theme.dividerColor.withOpacity(0.5),
+                        height: 1,
+                      ),
                   itemBuilder: (context, index) {
-                    final replyData = repliesDocs[index].data() as Map<String, dynamic>;
+                    final replyData =
+                        repliesDocs[index].data() as Map<String, dynamic>;
 
                     // Format timestamp
                     String timeText = "";
                     if (replyData["timestamp"] != null) {
-                      final timestamp = (replyData["timestamp"] as Timestamp).toDate();
+                      final timestamp =
+                          (replyData["timestamp"] as Timestamp).toDate();
                       timeText = formatCommentDate(timestamp);
                     }
 
@@ -337,7 +384,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
                             backgroundColor: theme.colorScheme.secondary,
                             radius: 16,
                             child: Text(
-                              replyData["replyBy"]?.toString().isNotEmpty == true
+                              replyData["replyBy"]?.toString().isNotEmpty ==
+                                      true
                                   ? replyData["replyBy"][0].toUpperCase()
                                   : '?',
                               style: TextStyle(
@@ -356,9 +404,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                   children: [
                                     Text(
                                       replyData["replyBy"] ?? "Anonymous",
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
@@ -438,19 +487,20 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       onTap: _isSending ? null : _sendReply,
                       child: Container(
                         padding: const EdgeInsets.all(12),
-                        child: _isSending
-                            ? SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: theme.colorScheme.onPrimary,
-                            strokeWidth: 2,
-                          ),
-                        )
-                            : Icon(
-                          Icons.send,
-                          color: theme.colorScheme.onPrimary,
-                        ),
+                        child:
+                            _isSending
+                                ? SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: theme.colorScheme.onPrimary,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : Icon(
+                                  Icons.send,
+                                  color: theme.colorScheme.onPrimary,
+                                ),
                       ),
                     ),
                   ),

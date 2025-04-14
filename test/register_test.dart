@@ -19,13 +19,13 @@ void main() {
 
     // Build the RegisterPage widget with the mocks
     await tester.pumpWidget(
-        MaterialApp(
-          home: RegisterPage(
-            onTap: () {},
-            auth: mockAuth,
-            firestore: mockFirestore,
-          ),
-        )
+      MaterialApp(
+        home: RegisterPage(
+          onTap: () {},
+          auth: mockAuth,
+          firestore: mockFirestore,
+        ),
+      ),
     );
 
     // Verify UI elements exist with exact text matches
@@ -34,7 +34,10 @@ void main() {
     expect(find.text('Register'), findsOneWidget);
     expect(find.text('Forgot Password?'), findsOneWidget);
     expect(find.text("Already have an account ?"), findsOneWidget);
-    expect(find.text("  Login Here"), findsOneWidget); // Two spaces at the beginning
+    expect(
+      find.text("  Login Here"),
+      findsOneWidget,
+    ); // Two spaces at the beginning
 
     // Enter text into fields
     await tester.enterText(find.byType(TextField).at(0), 'testuser');

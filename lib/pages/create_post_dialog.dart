@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:minimalsocialmedia/database/firestore.dart';
+import 'package:minimalsocialmedia/database/firestore_database.dart';
 import 'package:minimalsocialmedia/models/post_model.dart';
 import 'package:uuid/uuid.dart';
 

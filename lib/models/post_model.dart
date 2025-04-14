@@ -1,6 +1,6 @@
 class PostModel {
   final String postId;
-  final String content;          // Renamed from caption
+  final String content; // Renamed from caption
   final String authorUsername;
   final String authorEmail;
   int likes;

@@ -2,12 +2,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:minimalsocialmedia/auth/login_or_register.dart';
 import 'package:minimalsocialmedia/firebase_options.dart';
+import 'package:minimalsocialmedia/pages/explore_page.dart';
 import 'package:minimalsocialmedia/pages/home_page.dart';
-import 'package:minimalsocialmedia/pages/profile_page.dart';
 import 'package:minimalsocialmedia/pages/leaderboard_page.dart';
+import 'package:minimalsocialmedia/pages/profile_page.dart';
 import 'package:minimalsocialmedia/theme/dark_mode.dart';
 import 'package:minimalsocialmedia/theme/light_mode.dart';
-import 'package:minimalsocialmedia/pages/explore_page.dart';
 
 import 'auth/auth.dart';
 

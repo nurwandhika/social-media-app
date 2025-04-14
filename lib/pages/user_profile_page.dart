@@ -33,12 +33,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
     if (currentUser == null) return;
 
     try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('Users')
-          .doc(currentUser.email)
-          .collection('following')
-          .doc(widget.userEmail)
-          .get();
+      final snapshot =
+          await FirebaseFirestore.instance
+              .collection('Users')
+              .doc(currentUser.email)
+              .collection('following')
+              .doc(widget.userEmail)
+              .get();
 
       setState(() {
         _isFollowing = snapshot.exists;
@@ -98,9 +99,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
         _isFollowing = !_isFollowing;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       setState(() {
         _isLoading = false;
@@ -131,7 +132,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   backgroundColor: theme.colorScheme.primary,
                   radius: 40,
                   child: Text(
-                    widget.username.isNotEmpty ? widget.username[0].toUpperCase() : '?',
+                    widget.username.isNotEmpty
+                        ? widget.username[0].toUpperCase()
+                        : '?',
                     style: TextStyle(
                       color: theme.colorScheme.onPrimary,
                       fontSize: 32,
@@ -142,10 +145,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 const SizedBox(height: 16),
 
                 // Username
-                Text(
-                  widget.username,
-                  style: theme.textTheme.headlineSmall,
-                ),
+                Text(widget.username, style: theme.textTheme.headlineSmall),
 
                 const SizedBox(height: 8),
 
@@ -153,25 +153,30 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _toggleFollow,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _isFollowing
-                        ? theme.colorScheme.secondary
-                        : theme.colorScheme.primary,
+                    backgroundColor:
+                        _isFollowing
+                            ? theme.colorScheme.secondary
+                            : theme.colorScheme.primary,
                     foregroundColor: theme.colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 10,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: _isLoading
-                      ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: theme.colorScheme.onPrimary,
-                    ),
-                  )
-                      : Text(_isFollowing ? 'Unfollow' : 'Follow'),
+                  child:
+                      _isLoading
+                          ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: theme.colorScheme.onPrimary,
+                            ),
+                          )
+                          : Text(_isFollowing ? 'Unfollow' : 'Follow'),
                 ),
 
                 const SizedBox(height: 16),
@@ -181,24 +186,33 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('Posts')
-                          .where('authorEmail', isEqualTo: widget.userEmail)
-                          .snapshots(),
+                      stream:
+                          FirebaseFirestore.instance
+                              .collection('Posts')
+                              .where('authorEmail', isEqualTo: widget.userEmail)
+                              .snapshots(),
                       builder: (context, snapshot) {
-                        final postCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
+                        final postCount =
+                            snapshot.hasData ? snapshot.data!.docs.length : 0;
                         return _buildStat('Posts', postCount, theme);
                       },
                     ),
                     StreamBuilder<DocumentSnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('Users')
-                          .doc(widget.userEmail)
-                          .snapshots(),
+                      stream:
+                          FirebaseFirestore.instance
+                              .collection('Users')
+                              .doc(widget.userEmail)
+                              .snapshots(),
                       builder: (context, snapshot) {
-                        final followerCount = snapshot.hasData && snapshot.data!.exists
-                            ? (snapshot.data!.data() as Map<String, dynamic>)['followerCount'] ?? 0
-                            : 0;
+                        final followerCount =
+                            snapshot.hasData && snapshot.data!.exists
+                                ? (snapshot.data!.data()
+                                        as Map<
+                                          String,
+                                          dynamic
+                                        >)['followerCount'] ??
+                                    0
+                                : 0;
                         return _buildStat('Followers', followerCount, theme);
                       },
                     ),
@@ -213,15 +227,18 @@ class _UserProfilePageState extends State<UserProfilePage> {
           // User's posts
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('Posts')
-                  .where('authorEmail', isEqualTo: widget.userEmail)
-                  .orderBy('createdAt', descending: true)
-                  .snapshots(),
+              stream:
+                  FirebaseFirestore.instance
+                      .collection('Posts')
+                      .where('authorEmail', isEqualTo: widget.userEmail)
+                      .orderBy('createdAt', descending: true)
+                      .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
-                    child: CircularProgressIndicator(color: theme.colorScheme.primary),
+                    child: CircularProgressIndicator(
+                      color: theme.colorScheme.primary,
+                    ),
                   );
                 }
 
@@ -236,59 +253,65 @@ class _UserProfilePageState extends State<UserProfilePage> {
                           color: theme.colorScheme.tertiary.withOpacity(0.5),
                         ),
                         const SizedBox(height: 16),
-                        Text(
-                          'No posts yet',
-                          style: theme.textTheme.bodyLarge,
-                        ),
+                        Text('No posts yet', style: theme.textTheme.bodyLarge),
                       ],
                     ),
                   );
                 }
 
-                final posts = snapshot.data!.docs.map((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
+                final posts =
+                    snapshot.data!.docs.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
 
-                  DateTime? createdAt;
-                  try {
-                    if (data['createdAt'] is Timestamp) {
-                      createdAt = (data['createdAt'] as Timestamp).toDate();
-                    } else if (data['createdAt'] is String) {
-                      createdAt = DateTime.parse(data['createdAt']);
-                    }
-                  } catch (_) {
-                    createdAt = DateTime.now();
-                  }
+                      DateTime? createdAt;
+                      try {
+                        if (data['createdAt'] is Timestamp) {
+                          createdAt = (data['createdAt'] as Timestamp).toDate();
+                        } else if (data['createdAt'] is String) {
+                          createdAt = DateTime.parse(data['createdAt']);
+                        }
+                      } catch (_) {
+                        createdAt = DateTime.now();
+                      }
 
-                  final likedBy = data.containsKey("likedBy")
-                      ? List<String>.from(data["likedBy"])
-                      : <String>[];
+                      final likedBy =
+                          data.containsKey("likedBy")
+                              ? List<String>.from(data["likedBy"])
+                              : <String>[];
 
-                  return PostModel(
-                    postId: doc.id,
-                    content: data['content'] ?? '',
-                    authorUsername: data['authorUsername'] ?? '',
-                    authorEmail: data['authorEmail'] ?? '',
-                    likes: data['likes'] ?? 0,
-                    createdAt: createdAt ?? DateTime.now(),
-                    likedBy: likedBy,
-                  );
-                }).toList();
+                      return PostModel(
+                        postId: doc.id,
+                        content: data['content'] ?? '',
+                        authorUsername: data['authorUsername'] ?? '',
+                        authorEmail: data['authorEmail'] ?? '',
+                        likes: data['likes'] ?? 0,
+                        createdAt: createdAt ?? DateTime.now(),
+                        likedBy: likedBy,
+                      );
+                    }).toList();
 
                 return ListView.builder(
                   itemCount: posts.length,
                   itemBuilder: (context, index) {
                     final post = posts[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       elevation: 1,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => PostDetailPage(postId: post.postId),
+                              builder:
+                                  (context) =>
+                                      PostDetailPage(postId: post.postId),
                             ),
                           );
                         },
@@ -340,15 +363,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          count.toString(),
-          style: theme.textTheme.titleLarge,
-        ),
+        Text(count.toString(), style: theme.textTheme.titleLarge),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: theme.textTheme.bodyMedium,
-        ),
+        Text(label, style: theme.textTheme.bodyMedium),
       ],
     );
   }

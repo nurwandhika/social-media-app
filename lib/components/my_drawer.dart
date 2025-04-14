@@ -5,7 +5,7 @@ class MyDrawer extends StatelessWidget {
   const MyDrawer({super.key});
 
   //logout user
-  void logout(){
+  void logout() {
     FirebaseAuth.instance.signOut();
   }
 
@@ -58,7 +58,6 @@ class MyDrawer extends StatelessWidget {
 
                     //navigate to profile page
                     Navigator.pushNamed(context, "/profile_page");
-
                   },
                 ),
               ),
@@ -101,7 +100,6 @@ class MyDrawer extends StatelessWidget {
               },
             ),
           ),
-
         ],
       ),
     );

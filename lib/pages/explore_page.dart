@@ -120,10 +120,7 @@ class _ExplorePageState extends State<ExplorePage> {
                   },
                 ),
                 IconButton(
-                  icon: Icon(
-                    Icons.explore,
-                    color: theme.colorScheme.primary,
-                  ),
+                  icon: Icon(Icons.explore, color: theme.colorScheme.primary),
                   onPressed: () {},
                 ),
                 Container(
