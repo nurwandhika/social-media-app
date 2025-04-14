@@ -10,14 +10,42 @@ class LeaderboardPage extends StatefulWidget {
 
 class _LeaderboardPageState extends State<LeaderboardPage> {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
-  int _selectedIndex = 3;
 
-  Stream<QuerySnapshot> getLeaderboardStream() {
-    return firestore
-        .collection('Users')
-        .orderBy('totalLikes', descending: true)
-        .limit(20)
-        .snapshots();
+  // Get users with their email for later lookup
+  Stream<List<Map<String, dynamic>>> getUsersStream() {
+    return firestore.collection('Users').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'email': doc.id,
+          'username': data['username'] ?? 'Anonymous',
+        };
+      }).toList();
+    });
+  }
+
+  // Get all posts to calculate accurate like counts
+  Stream<Map<String, int>> getAccurateLikesStream() {
+    return firestore.collection('Posts').snapshots().map((snapshot) {
+      Map<String, int> authorLikes = {};
+
+      // Calculate likes based on existing posts
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final authorEmail = data['authorEmail'];
+        final likes = (data['likes'] ?? 0) as int;
+
+        if (authorEmail != null) {
+          if (authorLikes.containsKey(authorEmail)) {
+            authorLikes[authorEmail] = authorLikes[authorEmail]! + likes;
+          } else {
+            authorLikes[authorEmail] = likes;
+          }
+        }
+      }
+
+      return authorLikes;
+    });
   }
 
   @override
@@ -37,186 +65,216 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           ),
         ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: getLeaderboardStream(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(
-                color: theme.colorScheme.primary,
-              ),
-            );
-          }
-          if (!snapshot.hasData ||
-              snapshot.data == null ||
-              snapshot.data!.docs.isEmpty) {
-            return Center(
-              child: Text(
-                "No leaderboard data available",
-                style: theme.textTheme.bodyLarge,
-              ),
-            );
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: getUsersStream(),
+        builder: (context, usersSnapshot) {
+          if (usersSnapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
           }
 
-          final leaderboardDocs = snapshot.data!.docs;
+          if (!usersSnapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
 
-          return ListView.builder(
-            itemCount: leaderboardDocs.length,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemBuilder: (context, index) {
-              final doc = leaderboardDocs[index].data() as Map<String, dynamic>;
-              final username = doc['username'] ?? 'Anonymous';
-              final totalLikes = doc['totalLikes'] ?? 0;
+          return StreamBuilder<Map<String, int>>(
+            stream: getAccurateLikesStream(),
+            builder: (context, likesSnapshot) {
+              if (!likesSnapshot.hasData) {
+                return Center(child: CircularProgressIndicator());
+              }
 
-              // Styling for top 3 ranks
-              Color rankColor;
-              Widget rankWidget;
+              // Combine user data with accurate like counts
+              final users = usersSnapshot.data!;
+              final likes = likesSnapshot.data!;
 
-              if (index == 0) {
-                rankColor = Colors.amber; // Gold
-                rankWidget = Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: rankColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '1',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                );
-              } else if (index == 1) {
-                rankColor = Colors.grey.shade400; // Silver
-                rankWidget = Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: rankColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '2',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                );
-              } else if (index == 2) {
-                rankColor = Colors.brown.shade300; // Bronze
-                rankWidget = Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: rankColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '3',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                );
-              } else {
-                rankWidget = SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: Center(
-                    child: Text(
-                      '${index + 1}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.inversePrimary,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
+              List<Map<String, dynamic>> leaderboardData = [];
+
+              for (var user in users) {
+                final email = user['email'];
+                final totalLikes = likes[email] ?? 0;
+                leaderboardData.add({
+                  'username': user['username'],
+                  'totalLikes': totalLikes,
+                  'email': email,
+                });
+              }
+
+              // Sort by likes count descending
+              leaderboardData.sort((a, b) =>
+                  b['totalLikes'].compareTo(a['totalLikes']));
+
+              // Limit to top 20
+              if (leaderboardData.length > 20) {
+                leaderboardData = leaderboardData.sublist(0, 20);
+              }
+
+              // If empty, show no data
+              if (leaderboardData.isEmpty) {
+                return Center(
+                  child: Text("No leaderboard data available"),
                 );
               }
 
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.background,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: theme.dividerColor, width: 0.5),
-                ),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 8),
-                    rankWidget,
-                    const SizedBox(width: 16),
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: theme.colorScheme.primary,
-                      child: Text(
-                        username.isNotEmpty ? username[0].toUpperCase() : '?',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
+              // Continue with your existing ListView.builder
+              return ListView.builder(
+                itemCount: leaderboardData.length,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemBuilder: (context, index) {
+                  final data = leaderboardData[index];
+                  final username = data['username'];
+                  final totalLikes = data['totalLikes'];
+
+                  // Styling for top 3 ranks
+                  Color rankColor;
+                  Widget rankWidget;
+
+                  if (index == 0) {
+                    rankColor = Colors.amber; // Gold
+                    rankWidget = Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: rankColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Text(
+                          '1',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(username, style: theme.textTheme.titleMedium),
-                          const SizedBox(height: 2),
-                          Text(
-                            "Posts liked $totalLikes times",
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
+                    );
+                  } else if (index == 1) {
+                    rankColor = Colors.grey.shade400; // Silver
+                    rankWidget = Container(
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.secondary,
-                        borderRadius: BorderRadius.circular(16),
+                        color: rankColor,
+                        shape: BoxShape.circle,
                       ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.favorite,
-                            color: Colors.red,
-                            size: 16,
+                      child: const Center(
+                        child: Text(
+                          '2',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            "$totalLikes",
-                            style: theme.textTheme.bodyMedium?.copyWith(
+                        ),
+                      ),
+                    );
+                  } else if (index == 2) {
+                    rankColor = Colors.brown.shade300; // Bronze
+                    rankWidget = Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: rankColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Text(
+                          '3',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    );
+                  } else {
+                    rankWidget = SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: Center(
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.inversePrimary,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.background,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: theme.dividerColor, width: 0.5),
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 8),
+                        rankWidget,
+                        const SizedBox(width: 16),
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: theme.colorScheme.primary,
+                          child: Text(
+                            username.isNotEmpty ? username[0].toUpperCase() : '?',
+                            style: const TextStyle(
+                              color: Colors.white,
                               fontWeight: FontWeight.bold,
+                              fontSize: 18,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(username, style: theme.textTheme.titleMedium),
+                              const SizedBox(height: 2),
+                              Text(
+                                "Posts liked $totalLikes times",
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.secondary,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.favorite,
+                                color: Colors.red,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                "$totalLikes",
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                  ],
-                ),
+                  );
+                },
               );
             },
           );
@@ -259,7 +317,6 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                     Navigator.pushReplacementNamed(context, '/explore_page');
                   },
                 ),
-                // Add button - center
                 Container(
                   width: 48,
                   height: 30,
@@ -276,7 +333,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                 IconButton(
                   icon: Icon(
                     Icons.emoji_events,
-                    color: theme.colorScheme.primary, // Selected color
+                    color: theme.colorScheme.primary,
                   ),
                   onPressed: () {
                     // Already on leaderboard page

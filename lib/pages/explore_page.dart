@@ -233,11 +233,10 @@ class _ExplorePageState extends State<ExplorePage> {
     final currentUser = FirebaseAuth.instance.currentUser;
 
     // Filter out the current user
-    final filteredUsers =
-        users.where((doc) {
-          final userData = doc.data() as Map<String, dynamic>;
-          return currentUser == null || userData['email'] != currentUser.email;
-        }).toList();
+    final filteredUsers = users.where((doc) {
+      final userData = doc.data() as Map<String, dynamic>;
+      return currentUser == null || userData['email'] != currentUser.email;
+    }).toList();
 
     if (filteredUsers.isEmpty) {
       return Center(
@@ -254,15 +253,12 @@ class _ExplorePageState extends State<ExplorePage> {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: filteredUsers.length,
-      separatorBuilder:
-          (context, index) =>
-              Divider(color: theme.dividerColor, height: 1, indent: 70),
+      separatorBuilder: (context, index) =>
+          Divider(color: theme.dividerColor, height: 1, indent: 70),
       itemBuilder: (context, index) {
         final userData = filteredUsers[index].data() as Map<String, dynamic>;
         final username = userData['username'] ?? 'Anonymous';
         final email = userData['email'] ?? '';
-        final postsCount = userData['postsCount'] ?? 0;
-        final followerCount = userData['followerCount'] ?? 0;
 
         return ListTile(
           contentPadding: const EdgeInsets.symmetric(
@@ -282,9 +278,28 @@ class _ExplorePageState extends State<ExplorePage> {
             ),
           ),
           title: Text(username, style: theme.textTheme.titleMedium),
-          subtitle: Text(
-            '$postsCount posts · $followerCount followers',
-            style: theme.textTheme.bodySmall,
+          subtitle: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('Posts')
+                .where('authorEmail', isEqualTo: email)
+                .snapshots(),
+            builder: (context, snapshot) {
+              final postCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
+
+              // Calculate total likes from existing posts
+              int totalLikes = 0;
+              if (snapshot.hasData) {
+                for (var doc in snapshot.data!.docs) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  totalLikes += (data['likes'] ?? 0) as int;
+                }
+              }
+
+              return Text(
+                '$postCount posts · $totalLikes likes',
+                style: theme.textTheme.bodySmall,
+              );
+            },
           ),
           trailing: Icon(Icons.chevron_right, color: theme.iconTheme.color),
           onTap: () => _navigateToUserProfile(context, userData),

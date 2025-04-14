@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:minimalsocialmedia/models/post_model.dart';
+import 'package:minimalsocialmedia/pages/home_page.dart';
 import 'package:minimalsocialmedia/pages/post_detail_page.dart';
 
 class UserProfilePage extends StatefulWidget {
@@ -127,7 +128,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                // Avatar
+                // Avatar and username sections remain unchanged
                 CircleAvatar(
                   backgroundColor: theme.colorScheme.primary,
                   radius: 40,
@@ -143,44 +144,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Username
                 Text(widget.username, style: theme.textTheme.headlineSmall),
-
-                const SizedBox(height: 8),
-
-                // Follow button
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _toggleFollow,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        _isFollowing
-                            ? theme.colorScheme.secondary
-                            : theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 10,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child:
-                      _isLoading
-                          ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          )
-                          : Text(_isFollowing ? 'Unfollow' : 'Follow'),
-                ),
-
                 const SizedBox(height: 16),
 
+                // Stats row
                 // Stats row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -194,26 +161,23 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       builder: (context, snapshot) {
                         final postCount =
                             snapshot.hasData ? snapshot.data!.docs.length : 0;
-                        return _buildStat('Posts', postCount, theme);
-                      },
-                    ),
-                    StreamBuilder<DocumentSnapshot>(
-                      stream:
-                          FirebaseFirestore.instance
-                              .collection('Users')
-                              .doc(widget.userEmail)
-                              .snapshots(),
-                      builder: (context, snapshot) {
-                        final followerCount =
-                            snapshot.hasData && snapshot.data!.exists
-                                ? (snapshot.data!.data()
-                                        as Map<
-                                          String,
-                                          dynamic
-                                        >)['followerCount'] ??
-                                    0
-                                : 0;
-                        return _buildStat('Followers', followerCount, theme);
+
+                        // Calculate total likes from existing posts
+                        int totalLikes = 0;
+                        if (snapshot.hasData) {
+                          for (var doc in snapshot.data!.docs) {
+                            final data = doc.data() as Map<String, dynamic>;
+                            totalLikes += (data['likes'] ?? 0) as int;
+                          }
+                        }
+
+                        return Row(
+                          children: [
+                            _buildStat('Posts', postCount, theme),
+                            const SizedBox(width: 32),
+                            _buildStat('Likes', totalLikes, theme),
+                          ],
+                        );
                       },
                     ),
                   ],
@@ -224,17 +188,18 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
           Divider(color: theme.dividerColor),
 
-          // User's posts
+          // User's posts - using StreamBuilder with TwitterPostCard like in ProfilePage
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream:
                   FirebaseFirestore.instance
                       .collection('Posts')
                       .where('authorEmail', isEqualTo: widget.userEmail)
-                      .orderBy('createdAt', descending: true)
                       .snapshots(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                // Only show loading on initial fetch
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    !snapshot.hasData) {
                   return Center(
                     child: CircularProgressIndicator(
                       color: theme.colorScheme.primary,
@@ -259,95 +224,73 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   );
                 }
 
+                // Sort posts manually instead of using orderBy (which can cause flickering)
                 final posts =
                     snapshot.data!.docs.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
+                        final postData = doc.data() as Map<String, dynamic>;
+                        final postId = doc.id;
 
-                      DateTime? createdAt;
-                      try {
-                        if (data['createdAt'] is Timestamp) {
-                          createdAt = (data['createdAt'] as Timestamp).toDate();
-                        } else if (data['createdAt'] is String) {
-                          createdAt = DateTime.parse(data['createdAt']);
+                        final content =
+                            postData["content"] ?? postData["caption"] ?? '';
+                        final authorUsername =
+                            postData["authorUsername"] ?? widget.username;
+                        final authorEmail =
+                            postData["authorEmail"] ?? widget.userEmail;
+                        final likes = postData["likes"] ?? 0;
+
+                        // More robust date parsing
+                        DateTime createdAt = DateTime.now();
+                        try {
+                          if (postData['createdAt'] is Timestamp) {
+                            createdAt =
+                                (postData['createdAt'] as Timestamp).toDate();
+                          } else if (postData['createdAt'] is String) {
+                            createdAt = DateTime.parse(postData['createdAt']);
+                          }
+                        } catch (e) {
+                          // Fallback silently
                         }
-                      } catch (_) {
-                        createdAt = DateTime.now();
-                      }
 
-                      final likedBy =
-                          data.containsKey("likedBy")
-                              ? List<String>.from(data["likedBy"])
-                              : <String>[];
+                        final likedBy =
+                            postData.containsKey("likedBy") &&
+                                    postData["likedBy"] is List
+                                ? List<String>.from(postData["likedBy"])
+                                : <String>[];
 
-                      return PostModel(
-                        postId: doc.id,
-                        content: data['content'] ?? '',
-                        authorUsername: data['authorUsername'] ?? '',
-                        authorEmail: data['authorEmail'] ?? '',
-                        likes: data['likes'] ?? 0,
-                        createdAt: createdAt ?? DateTime.now(),
-                        likedBy: likedBy,
-                      );
-                    }).toList();
+                        return PostModel(
+                          postId: postId,
+                          content: content,
+                          authorUsername: authorUsername,
+                          authorEmail: authorEmail,
+                          likes: likes,
+                          createdAt: createdAt,
+                          likedBy: likedBy,
+                        );
+                      }).toList()
+                      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
                 return ListView.builder(
                   itemCount: posts.length,
                   itemBuilder: (context, index) {
                     final post = posts[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      elevation: 1,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) =>
-                                      PostDetailPage(postId: post.postId),
-                            ),
-                          );
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                post.content,
-                                style: theme.textTheme.bodyLarge,
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.favorite,
-                                    color: theme.colorScheme.primary,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${post.likes}',
-                                    style: theme.textTheme.bodySmall,
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Text(
-                                    _formatTimeAgo(post.createdAt),
-                                    style: theme.textTheme.bodySmall,
-                                  ),
-                                ],
-                              ),
-                            ],
+                    return TwitterPostCard(
+                      post: post,
+                      onLike: () {
+                        FirebaseFirestore.instance
+                            .collection('Posts')
+                            .doc(post.postId)
+                            .update({'likes': FieldValue.increment(1)});
+                      },
+                      onReply: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) =>
+                                    PostDetailPage(postId: post.postId),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     );
                   },
                 );

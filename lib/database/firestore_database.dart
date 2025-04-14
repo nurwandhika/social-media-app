@@ -4,64 +4,105 @@ import 'package:minimalsocialmedia/models/post_model.dart';
 
 class FirestoreDatabase {
   // Avoid storing Firebase Auth as a field
-  final CollectionReference posts = FirebaseFirestore.instance.collection("Posts");
+  final CollectionReference posts = FirebaseFirestore.instance.collection(
+    "Posts",
+  );
 
   Future<void> addPost(PostModel post) async {
     await posts.doc(post.postId).set(post.toMap());
   }
 
   Future<void> toggleLike(String postId) async {
-    // Access Firebase Auth directly when needed
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    // Get current user
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user == null || user.email == null) return;
 
-    final uid = user.uid;
+    final String userEmail = user.email!;
     DocumentReference postRef = posts.doc(postId);
 
-    await FirebaseFirestore.instance.runTransaction((transaction) async {
-      DocumentSnapshot snapshot = await transaction.get(postRef);
-      if (!snapshot.exists) return;
+    try {
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        DocumentSnapshot snapshot = await transaction.get(postRef);
+        if (!snapshot.exists) {
+          print("Post does not exist: $postId");
+          return;
+        }
 
-      final data = snapshot.data() as Map<String, dynamic>;
+        final data = snapshot.data() as Map<String, dynamic>;
+        final postAuthorEmail = data['authorEmail'];
+
+        // Convert likedBy to List<String>
+        List<String> likedBy = [];
+        if (data.containsKey('likedBy') && data['likedBy'] is List) {
+          likedBy = List<String>.from(data['likedBy']);
+        }
+
+        bool hasLiked = likedBy.contains(userEmail);
+
+        if (hasLiked) {
+          // Unlike the post
+          transaction.update(postRef, {
+            'likedBy': FieldValue.arrayRemove([userEmail]),
+            'likes': FieldValue.increment(-1),
+          });
+
+          // Update author's total likes
+          if (postAuthorEmail != null) {
+            final userDocRef = FirebaseFirestore.instance
+                .collection("Users")
+                .doc(postAuthorEmail);
+            transaction.update(userDocRef, {
+              'totalLikes': FieldValue.increment(-1),
+            });
+          }
+        } else {
+          // Like the post
+          transaction.update(postRef, {
+            'likedBy': FieldValue.arrayUnion([userEmail]),
+            'likes': FieldValue.increment(1),
+          });
+
+          // Update author's total likes
+          if (postAuthorEmail != null) {
+            final userDocRef = FirebaseFirestore.instance
+                .collection("Users")
+                .doc(postAuthorEmail);
+            transaction.update(userDocRef, {
+              'totalLikes': FieldValue.increment(1),
+            });
+          }
+        }
+      });
+    } catch (e) {
+      print("Error toggling like: $e");
+    }
+  }
+
+  // Add this method for proper post deletion
+  Future<void> deletePost(String postId) async {
+    try {
+      // Get the post first to know its likes count
+      DocumentSnapshot postDoc = await posts.doc(postId).get();
+
+      if (!postDoc.exists) return;
+
+      final data = postDoc.data() as Map<String, dynamic>;
       final postAuthorEmail = data['authorEmail'];
-      T getValue<T>(String key, T defaultValue) {
-        if (data.toString().contains(key) && data[key] != null) {
-          return data[key] as T;
-        }
-        return defaultValue;
+      final int likesCount = data['likes'] ?? 0;
+
+      // Update author's total likes by decreasing the likes count of deleted post
+      if (postAuthorEmail != null && likesCount > 0) {
+        await FirebaseFirestore.instance
+            .collection("Users")
+            .doc(postAuthorEmail)
+            .update({'totalLikes': FieldValue.increment(-likesCount)});
       }
 
-      List<dynamic> likedBy = getValue<List<dynamic>>('likedBy', []);
-      int currentLikes = getValue<int>('likes', 0);
-
-      if (likedBy.contains(uid)) {
-        transaction.update(postRef, {
-          'likedBy': FieldValue.arrayRemove([uid]),
-          'likes': currentLikes - 1,
-        });
-        if (postAuthorEmail != null) {
-          final userDocRef = FirebaseFirestore.instance
-              .collection("Users")
-              .doc(postAuthorEmail);
-          transaction.update(userDocRef, {
-            'totalLikes': FieldValue.increment(-1),
-          });
-        }
-      } else {
-        transaction.update(postRef, {
-          'likedBy': FieldValue.arrayUnion([uid]),
-          'likes': currentLikes + 1,
-        });
-        if (postAuthorEmail != null) {
-          final userDocRef = FirebaseFirestore.instance
-              .collection("Users")
-              .doc(postAuthorEmail);
-          transaction.update(userDocRef, {
-            'totalLikes': FieldValue.increment(1),
-          });
-        }
-      }
-    });
+      // Delete the post
+      await posts.doc(postId).delete();
+    } catch (e) {
+      print("Error deleting post: $e");
+    }
   }
 
   Future<void> addReply(String postId, Map<String, dynamic> replyData) async {
